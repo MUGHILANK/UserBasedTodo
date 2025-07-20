@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: false,
     user: null,
     token: null,
-    loading: true, // Start with loading true
+    loading: true,
     error: null
   });
 
@@ -105,7 +105,6 @@ export const AuthProvider = ({ children }) => {
             });
           } catch (parseError) {
             console.error('❌ Error parsing user from localStorage:', parseError);
-            // Clear corrupted data
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             dispatch({
@@ -130,7 +129,6 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('❌ Error initializing auth:', error);
-        // Clear corrupted data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         dispatch({
@@ -144,7 +142,6 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Add small delay to ensure DOM is ready
     const timer = setTimeout(initializeAuth, 100);
     return () => clearTimeout(timer);
   }, []);
@@ -157,36 +154,48 @@ export const AuthProvider = ({ children }) => {
       console.log('📥 Full login response:', response);
       console.log('📥 Login response data:', response.data);
       
-      // Handle different possible response structures
+      // ✅ EXTRACT USER DATA PROPERLY
       let token, user;
       
       if (response.data) {
-        // Check if token is directly in data
-        if (response.data.token) {
-          token = response.data.token;
-          user = { ...response.data };
-          delete user.token; // Remove token from user object
+        // Extract token
+        token = response.data.token || response.data.accessToken || response.data.authToken;
+        
+        // ✅ EXTRACT USER INFORMATION FROM RESPONSE
+        user = {
+          // Try different possible field names for user data
+          id: response.data.userId || response.data.id || response.data.user?.id,
+          name: response.data.name || response.data.userName || response.data.user?.name || response.data.fullName,
+          email: response.data.email || response.data.userEmail || response.data.user?.email,
+          // Include any other fields from response
+          ...response.data.user, // If user data is nested
+          // Spread the response data in case everything is at root level
+          ...(response.data.name || response.data.email ? response.data : {})
+        };
+        
+        // Remove token from user object if it was included
+        delete user.token;
+        delete user.accessToken;
+        delete user.authToken;
+        
+        console.log('👤 Extracted user data:', user);
+        console.log('🔑 Extracted token preview:', token ? token.substring(0, 20) + '...' : 'null');
+        
+        // ✅ VALIDATE REQUIRED FIELDS
+        if (!token) {
+          throw new Error('No authentication token received from server');
         }
-        // Check if there's a nested structure
-        else if (response.data.data && response.data.data.token) {
-          token = response.data.data.token;
-          user = { ...response.data.data };
+        
+        if (!user.email && !user.id) {
+          console.warn('⚠️ No user identification found, using response data');
+          user = { ...response.data };
           delete user.token;
-        }
-        // Check for other possible structures
-        else if (response.data.accessToken) {
-          token = response.data.accessToken;
-          user = { ...response.data };
           delete user.accessToken;
+          delete user.authToken;
         }
-        // If no token found, use entire response as user data
-        else {
-          console.warn('⚠️ No token found in response, using entire response as user data');
-          token = 'temp-token'; // Temporary fallback
-          user = response.data;
-        }
+        
       } else {
-        throw new Error('Invalid response structure');
+        throw new Error('Invalid response structure from server');
       }
 
       console.log('💾 Storing auth data:', { 
@@ -203,7 +212,8 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem('user');
       console.log('✅ Verification - Data stored successfully:', {
         tokenStored: !!storedToken,
-        userStored: !!storedUser
+        userStored: !!storedUser,
+        storedUserData: storedUser ? JSON.parse(storedUser) : null
       });
       
       dispatch({
@@ -211,7 +221,7 @@ export const AuthProvider = ({ children }) => {
         payload: { token, user }
       });
       
-      toast.success('Login successful!');
+      toast.success(`Welcome back, ${user.name || user.email || 'User'}!`);
       return { success: true };
     } catch (error) {
       console.error('❌ LOGIN ERROR DETAILS ===');
@@ -219,7 +229,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Response Data:', error.response?.data);
       console.error('Full Error:', error);
       
-      // Handle different error structures
       if (error.response?.data?.errors) {
         const validationMessages = [];
         for (const [field, messages] of Object.entries(error.response.data.errors)) {
@@ -231,7 +240,7 @@ export const AuthProvider = ({ children }) => {
       } else if (error.response?.data?.title) {
         toast.error(error.response.data.title);
       } else {
-        toast.error('Login failed. Please try again.');
+        toast.error(error.message || 'Login failed. Please try again.');
       }
       
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
@@ -246,26 +255,31 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData);
       console.log('📥 Registration response:', response.data);
       
-      // Handle different possible response structures (same as login)
+      // ✅ EXTRACT USER DATA PROPERLY (same logic as login)
       let token, user;
       
       if (response.data) {
-        if (response.data.token) {
-          token = response.data.token;
-          user = { ...response.data };
-          delete user.token;
-        } else if (response.data.data && response.data.data.token) {
-          token = response.data.data.token;
-          user = { ...response.data.data };
-          delete user.token;
-        } else if (response.data.accessToken) {
-          token = response.data.accessToken;
-          user = { ...response.data };
-          delete user.accessToken;
-        } else {
-          console.warn('⚠️ No token found in registration response');
-          token = 'temp-token';
-          user = response.data;
+        // Extract token
+        token = response.data.token || response.data.accessToken || response.data.authToken;
+        
+        // ✅ EXTRACT USER INFORMATION FROM RESPONSE
+        user = {
+          id: response.data.userId || response.data.id || response.data.user?.id,
+          name: response.data.name || response.data.userName || response.data.user?.name || response.data.fullName,
+          email: response.data.email || response.data.userEmail || response.data.user?.email,
+          ...response.data.user,
+          ...(response.data.name || response.data.email ? response.data : {})
+        };
+        
+        // Remove token from user object
+        delete user.token;
+        delete user.accessToken;
+        delete user.authToken;
+        
+        console.log('👤 Extracted user data:', user);
+        
+        if (!token) {
+          throw new Error('No authentication token received from server');
         }
       }
       
@@ -277,7 +291,7 @@ export const AuthProvider = ({ children }) => {
         payload: { token, user }
       });
       
-      toast.success('Registration successful!');
+      toast.success(`Welcome, ${user.name || user.email || 'User'}!`);
       return { success: true };
     } catch (error) {
       console.error('❌ REGISTRATION ERROR DETAILS ===');
@@ -314,7 +328,9 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: state.isAuthenticated,
       loading: state.loading,
       hasUser: !!state.user,
-      hasToken: !!state.token
+      hasToken: !!state.token,
+      userName: state.user?.name || 'No name',
+      userEmail: state.user?.email || 'No email'
     });
   }, [state.isAuthenticated, state.loading, state.user, state.token]);
 

@@ -2,11 +2,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FaTasks, FaClock, FaCheck, FaExclamationTriangle } from 'react-icons/fa';
 
-const TaskStats = ({ tasks }) => {
+const TaskStats = ({ tasks = [] }) => {
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.taskStatus === 'completed').length;
-  const pendingTasks = tasks.filter(task => task.taskStatus === 'pending').length;
-  const inProgressTasks = tasks.filter(task => task.taskStatus === 'in-progress').length;
+  const completedTasks = tasks.filter(task => 
+    task.taskStatus?.toLowerCase() === 'completed'
+  ).length;
+  const pendingTasks = tasks.filter(task => 
+    task.taskStatus?.toLowerCase() === 'pending' || !task.taskStatus
+  ).length;
+  const inProgressTasks = tasks.filter(task => 
+    task.taskStatus?.toLowerCase() === 'in-progress'
+  ).length;
 
   const stats = [
     {
@@ -45,7 +51,10 @@ const TaskStats = ({ tasks }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: index * 0.1 }}
         >
-          <div className="stat-icon" style={{ backgroundColor: `${stat.color}20`, color: stat.color }}>
+          <div 
+            className="stat-icon" 
+            style={{ backgroundColor: `${stat.color}20`, color: stat.color }}
+          >
             <stat.icon />
           </div>
           <div className="stat-content">

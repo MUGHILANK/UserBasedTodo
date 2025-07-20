@@ -1,10 +1,56 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
+
+  // ✅ EXTRACT USER NAME WITH FALLBACKS
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    
+    // Try different possible field names for user name
+    return user.name || 
+           user.userName || 
+           user.fullName || 
+           user.displayName || 
+           user.firstName || 
+           (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '') ||
+           user.email?.split('@')[0] || // Use email username as fallback
+           'User';
+  };
+
+  // ✅ GET USER EMAIL WITH FALLBACKS
+  const getUserEmail = () => {
+    if (!user) return '';
+    return user.email || user.userEmail || user.emailAddress || '';
+  };
+
+  // ✅ GET USER INITIALS FOR AVATAR
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    const email = getUserEmail();
+    
+    if (displayName && displayName !== 'User') {
+      // Get initials from name
+      return displayName
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase())
+        .slice(0, 2) // Max 2 initials
+        .join('');
+    } else if (email) {
+      // Get initials from email
+      return email.charAt(0).toUpperCase();
+    } else {
+      return 'U';
+    }
+  };
+
+  console.log('👤 Header: User data:', user);
+  console.log('📛 Header: Display name:', getUserDisplayName());
+  console.log('📧 Header: Email:', getUserEmail());
+  console.log('🔤 Header: Initials:', getUserInitials());
 
   return (
     <motion.header 
@@ -21,11 +67,16 @@ const Header = () => {
         <div className="header-right">
           <div className="user-info">
             <div className="user-avatar">
-              <FaUser />
+              {/* ✅ SHOW USER INITIALS */}
+              <span className="user-initials">{getUserInitials()}</span>
             </div>
             <div className="user-details">
-              <span className="user-name">{user?.name || 'User'}</span>
-              <span className="user-email">{user?.email}</span>
+              {/* ✅ SHOW ACTUAL USER NAME */}
+              <span className="user-name">{getUserDisplayName()}</span>
+              {/* ✅ SHOW USER EMAIL IF AVAILABLE */}
+              {getUserEmail() && (
+                <span className="user-email">{getUserEmail()}</span>
+              )}
             </div>
           </div>
           
@@ -34,6 +85,7 @@ const Header = () => {
             onClick={logout}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            title={`Logout ${getUserDisplayName()}`}
           >
             <FaSignOutAlt />
           </motion.button>

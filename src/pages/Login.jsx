@@ -11,26 +11,39 @@ const Login = () => {
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading, isAuthenticated } = useAuth();
+  const { login, loading, isAuthenticated, user, token } = useAuth();
   const navigate = useNavigate();
 
-  // Only navigate if authenticated and not loading
+  // Enhanced logging for auth state changes
   useEffect(() => {
+    console.log('🔍 Login Component - Auth State:', {
+      isAuthenticated,
+      loading,
+      hasUser: !!user,
+      hasToken: !!token,
+      userPreview: user ? JSON.stringify(user).substring(0, 100) : 'null'
+    });
+    
     if (isAuthenticated && !loading) {
-      console.log('User is authenticated, navigating to dashboard');
+      console.log('✅ Login Component: User is authenticated, navigating to dashboard');
       navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, user, token]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    // e.preventDefault();
+    
+    console.log('🚀 Login form submitted');
+    console.log('📝 Form data:', formData);
     
     if (!formData?.email?.trim()) {
+      console.log('❌ Email validation failed');
       toast.error('Email is required');
       return;
     }
     
     if (!formData?.password?.trim()) {
+      console.log('❌ Password validation failed');
       toast.error('Password is required');
       return;
     }
@@ -40,30 +53,49 @@ const Login = () => {
       passwordHash: formData.password
     };
     
-    console.log('Login data being sent:', JSON.stringify(loginData, null, 2));
+    console.log('📤 Login data being sent:', JSON.stringify(loginData, null, 2));
+    console.log('🔄 Calling login function...');
     
     try {
+      console.log('⏳ Awaiting login response...');
       const result = await login(loginData);
-      if (result.success) {
-        // Don't navigate here - let the useEffect handle it
-        console.log('Login successful, useEffect will handle navigation');
+      console.log('📥 Login function returned:', result);
+      debugger
+      console.log(result.data);
+      if (result && result.success) {
+        console.log('✅ Login reported success');
+        
+        // Check if auth data was actually stored
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        console.log('💾 Post-login localStorage check:', {
+          tokenExists: !!storedToken,
+          userExists: !!storedUser,
+          tokenPreview: storedToken ? storedToken.substring(0, 20) + '...' : 'null'
+        });
+        
+        console.log('⏭️ Login successful, useEffect should handle navigation');
+      } else {
+        console.log('❌ Login reported failure:', result);
       }
     } catch (error) {
-      console.error('Login submission error:', error);
+      console.error('💥 Login submission error:', error);
       toast.error('Login failed. Please try again.');
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`📝 Input changed: ${name} = "${value}"`);
     setFormData(prevState => ({
       ...prevState,
       [name]: value
     }));
   };
 
-  // Don't render login form if user is already authenticated
+  // Enhanced redirect screen logging
   if (isAuthenticated && !loading) {
+    console.log('🔄 Showing redirect screen - user authenticated');
     return (
       <div className="loading-container">
         <div className="spinner"></div>
@@ -71,6 +103,8 @@ const Login = () => {
       </div>
     );
   }
+
+  console.log('🎨 Rendering login form');
 
   return (
     <div className="auth-container">
@@ -85,7 +119,7 @@ const Login = () => {
           <p>Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        {/* <form onSubmit={handleSubmit} className="auth-form"> */}
           <div className="form-group">
             <div className="input-group">
               <FaEnvelope className="input-icon" />
@@ -97,6 +131,7 @@ const Login = () => {
                 onChange={handleChange}
                 required
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
           </div>
@@ -112,12 +147,14 @@ const Login = () => {
                 onChange={handleChange}
                 required
                 autoComplete="current-password"
+                disabled={loading}
               />
               <button
                 type="button"
                 className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
+                disabled={loading}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -125,7 +162,8 @@ const Login = () => {
           </div>
 
           <motion.button
-            type="submit"
+          onClick={()=>handleSubmit()}
+            type="button"
             className="auth-button"
             disabled={loading}
             whileHover={{ scale: loading ? 1 : 1.02 }}
@@ -133,7 +171,7 @@ const Login = () => {
           >
             {loading ? 'Signing In...' : 'Sign In'}
           </motion.button>
-        </form>
+        {/* </form> */}
 
         <div className="auth-footer">
           <p>Don't have an account? <Link to="/register">Sign up</Link></p>
