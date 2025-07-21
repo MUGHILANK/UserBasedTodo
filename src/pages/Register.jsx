@@ -15,10 +15,9 @@ const Register = () => {
   const { register, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ FIXED: Only redirect if user is already authenticated (from previous login)
+  // Only redirect if user is already authenticated (from previous login)
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      console.log('User already authenticated, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
@@ -61,20 +60,11 @@ const Register = () => {
       passwordHash: formData.password       
     };
     
-    console.log('Register data being sent:', JSON.stringify(registerData, null, 2));
-    console.log('Form data:', JSON.stringify(formData, null, 2));
-    
     try {
-      console.log('🚀 Starting registration process...');
       const result = await register(registerData);
-      console.log('📥 Registration result:', result);
       
       if (result.success) {
-        console.log('✅ Registration successful!');
-        
-        // ✅ AUTO-REDIRECT TO LOGIN PAGE AFTER SUCCESSFUL REGISTRATION
-        console.log('🔄 Redirecting to login page...');
-        
+        // Auto-redirect to login page after successful registration
         // Small delay to ensure success toast is visible
         setTimeout(() => {
           navigate('/login', { 
@@ -88,11 +78,9 @@ const Register = () => {
         }, 1500); // 1.5 second delay to show success toast
         
       } else {
-        console.error('❌ Registration failed:', result.error);
         toast.error(result.error || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      console.error('💥 Registration submission error:', error);
       toast.error('Registration failed. Please try again.');
     }
   };
@@ -107,6 +95,12 @@ const Register = () => {
 
   const togglePassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit(e);
+    }
   };
 
   // Show loading/redirect screen if user is already authenticated
@@ -143,6 +137,7 @@ const Register = () => {
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={handleChange}
+                onKeyPress={handleKeyPress}
                 required
                 autoComplete="name"
                 disabled={loading}
@@ -160,6 +155,7 @@ const Register = () => {
                 placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
+                onKeyPress={handleKeyPress}
                 required
                 autoComplete="email"
                 disabled={loading}
@@ -177,6 +173,7 @@ const Register = () => {
                 placeholder="Password (min. 6 characters)"
                 value={formData.password}
                 onChange={handleChange}
+                onKeyPress={handleKeyPress}
                 required
                 minLength="6"
                 autoComplete="new-password"

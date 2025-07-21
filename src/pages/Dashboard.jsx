@@ -13,49 +13,42 @@ const Dashboard = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { fetchTasks, tasks, loading } = useTask();
 
-  // ✅ INITIAL LOAD
+  // Initial load
   useEffect(() => {
-    console.log('🏠 Dashboard: Component mounted, fetching tasks');
     fetchTasks();
   }, [fetchTasks]);
 
-  // ✅ AUTO-REFRESH MECHANISM (Optional)
+  // Auto-refresh mechanism (optional)
   useEffect(() => {
     if (!autoRefresh) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 Dashboard: Auto-refreshing tasks...');
       fetchTasks();
     }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [fetchTasks, autoRefresh]);
 
-  // ✅ MANUAL REFRESH FUNCTION
+  // Manual refresh function
   const handleManualRefresh = useCallback(async () => {
-    console.log('🔄 Dashboard: Manual refresh triggered');
     await fetchTasks();
   }, [fetchTasks]);
 
   const handleAddTask = () => {
-    console.log('➕ Dashboard: Add task button clicked');
     setEditingTask(null);
     setShowTaskForm(true);
   };
 
   const handleEditTask = (task) => {
-    console.log('✏️ Dashboard: Edit task clicked for:', task);
     setEditingTask(task);
     setShowTaskForm(true);
   };
 
   const handleCloseForm = useCallback(async () => {
-    console.log('🚪 Dashboard: Closing task form');
     setShowTaskForm(false);
     setEditingTask(null);
     
-    // ✅ REFRESH TASK LIST WHEN FORM CLOSES
-    console.log('🔄 Dashboard: Refreshing tasks after form close');
+    // Refresh task list when form closes
     await fetchTasks();
   }, [fetchTasks]);
 
@@ -83,7 +76,7 @@ const Dashboard = () => {
           </div>
           
           <div className="dashboard-actions">
-            {/* ✅ MANUAL REFRESH BUTTON */}
+            {/* Manual refresh button */}
             <motion.button
               className="refresh-btn"
               onClick={handleManualRefresh}

@@ -47,11 +47,6 @@ const Header = () => {
     }
   };
 
-  console.log('👤 Header: User data:', user);
-  console.log('📛 Header: Display name:', getUserDisplayName());
-  console.log('📧 Header: Email:', getUserEmail());
-  console.log('🔤 Header: Initials:', getUserInitials());
-
   return (
     <motion.header 
       className="header"

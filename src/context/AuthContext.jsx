@@ -7,11 +7,9 @@ const AuthContext = createContext();
 const authReducer = (state, action) => {
   switch (action.type) {
     case 'AUTH_INIT_START':
-      console.log('🔄 Auth initialization started');
       return { ...state, loading: true };
       
     case 'AUTH_INIT_SUCCESS':
-      console.log('✅ Auth initialization success:', action.payload);
       return { 
         ...state, 
         loading: false, 
@@ -22,11 +20,9 @@ const authReducer = (state, action) => {
       };
       
     case 'LOGIN_START':
-      console.log('🔄 Login started');
       return { ...state, loading: true, error: null };
       
     case 'LOGIN_SUCCESS':
-      console.log('✅ Login success:', action.payload);
       return { 
         ...state, 
         loading: false, 
@@ -37,7 +33,6 @@ const authReducer = (state, action) => {
       };
       
     case 'LOGIN_FAILURE':
-      console.log('❌ Login failure:', action.payload);
       return { 
         ...state, 
         loading: false, 
@@ -48,7 +43,6 @@ const authReducer = (state, action) => {
       };
       
     case 'LOGOUT':
-      console.log('🚪 Logout');
       return { 
         ...state, 
         isAuthenticated: false, 
@@ -59,20 +53,16 @@ const authReducer = (state, action) => {
       };
       
     case 'REGISTER_START':
-      console.log('🔄 Register started');
       return { ...state, loading: true, error: null };
       
     case 'REGISTER_SUCCESS':
-      console.log('✅ Register success - user created, needs login');
       return { 
         ...state, 
         loading: false,
         error: null
-        // ✅ Note: No authentication state change for registration
       };
       
     case 'REGISTER_FAILURE':
-      console.log('❌ Register failure:', action.payload);
       return { 
         ...state, 
         loading: false, 
@@ -102,20 +92,9 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         const userString = localStorage.getItem('user');
         
-        console.log('🔍 Checking localStorage:', {
-          tokenExists: !!token,
-          userExists: !!userString,
-          tokenPreview: token ? token.substring(0, 20) + '...' : 'null',
-          userPreview: userString ? userString.substring(0, 50) + '...' : 'null'
-        });
-        
         if (token && userString) {
           try {
             const user = JSON.parse(userString);
-            console.log('✅ Auth initialized from localStorage:', { 
-              token: !!token, 
-              user: user 
-            });
             
             dispatch({
               type: 'AUTH_INIT_SUCCESS',
@@ -126,7 +105,6 @@ export const AuthProvider = ({ children }) => {
               }
             });
           } catch (parseError) {
-            console.error('❌ Error parsing user from localStorage:', parseError);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             dispatch({
@@ -139,7 +117,6 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          console.log('ℹ️ No auth data found in localStorage');
           dispatch({
             type: 'AUTH_INIT_SUCCESS',
             payload: { 
@@ -150,7 +127,6 @@ export const AuthProvider = ({ children }) => {
           });
         }
       } catch (error) {
-        console.error('❌ Error initializing auth:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         dispatch({
@@ -168,26 +144,23 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ LOGIN FUNCTION - Requires token authentication
+  // LOGIN FUNCTION - Requires token authentication
   const login = async (credentials) => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      console.log('🔄 Attempting login with:', JSON.stringify(credentials, null, 2));
       const response = await authAPI.login(credentials);
-      console.log('📥 Full login response:', response);
-      console.log('📥 Login response data:', response.data);
       
       let token, user;
       
       if (response.data) {
-        // ✅ Extract token - try different possible field names
+        // Extract token - try different possible field names
         token = response.data.token || 
                 response.data.accessToken || 
                 response.data.authToken ||
                 response.data.jwtToken ||
                 response.data.access_token;
         
-        // ✅ Extract user information from login response
+        // Extract user information from login response
         user = {
           id: response.data.userId || 
               response.data.id || 
@@ -216,16 +189,12 @@ export const AuthProvider = ({ children }) => {
         delete user.access_token;
         delete user.passwordHash; // Remove password hash if present
         
-        console.log('👤 Extracted user data:', user);
-        console.log('🔑 Extracted token preview:', token ? token.substring(0, 20) + '...' : 'null');
-        
-        // ✅ Validate required fields for login
+        // Validate required fields for login
         if (!token) {
           throw new Error('No authentication token received from server');
         }
         
         if (!user.email && !user.id) {
-          console.warn('⚠️ No user identification found, using response data');
           user = { ...response.data };
           // Clean up sensitive fields
           delete user.token;
@@ -239,24 +208,10 @@ export const AuthProvider = ({ children }) => {
       } else {
         throw new Error('Invalid response structure from server');
       }
-
-      console.log('💾 Storing auth data:', { 
-        token: token ? token.substring(0, 20) + '...' : 'null', 
-        user 
-      });
       
       // Store in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
-      
-      // Verify storage worked
-      const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-      console.log('✅ Verification - Data stored successfully:', {
-        tokenStored: !!storedToken,
-        userStored: !!storedUser,
-        storedUserData: storedUser ? JSON.parse(storedUser) : null
-      });
       
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -267,11 +222,6 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
       
     } catch (error) {
-      console.error('❌ LOGIN ERROR DETAILS ===');
-      console.error('Status:', error.response?.status);
-      console.error('Response Data:', error.response?.data);
-      console.error('Full Error:', error);
-      
       let errorMessage = 'Login failed. Please try again.';
       
       if (error.response?.data?.errors) {
@@ -294,18 +244,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ REGISTER FUNCTION - No token required, just creates user
+  // REGISTER FUNCTION - No token required, just creates user
   const register = async (userData) => {
     dispatch({ type: 'REGISTER_START' });
     try {
-      console.log('🔄 Attempting registration with:', JSON.stringify(userData, null, 2));
       const response = await authAPI.register(userData);
-      console.log('📥 Registration response:', response.data);
       
-      // ✅ Registration successful - just check for success status
+      // Registration successful - just check for success status
       if (response.status === 200 || response.status === 201) {
-        console.log('✅ Registration successful - user created in database');
-        
         // Extract user data for success message
         const registeredUser = response.data;
         const userName = registeredUser.name || 
@@ -328,10 +274,6 @@ export const AuthProvider = ({ children }) => {
       }
       
     } catch (error) {
-      console.error('❌ REGISTRATION ERROR DETAILS ===');
-      console.error('Status:', error.response?.status);
-      console.error('Response Data:', error.response?.data);
-      
       let errorMessage = 'Registration failed';
       
       // Handle validation errors
@@ -355,16 +297,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ LOGOUT FUNCTION
+  // LOGOUT FUNCTION
   const logout = () => {
-    console.log('🚪 Logging out user');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     dispatch({ type: 'LOGOUT' });
     toast.success('Logged out successfully!');
   };
 
-  // ✅ Utility functions
+  // Utility functions
   const isTokenValid = () => {
     const token = localStorage.getItem('token');
     if (!token) return false;
@@ -379,7 +320,6 @@ export const AuthProvider = ({ children }) => {
       const currentTime = Math.floor(Date.now() / 1000);
       
       if (payload.exp && payload.exp < currentTime) {
-        console.log('🔐 Token expired, clearing auth data');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         return false;
@@ -387,7 +327,6 @@ export const AuthProvider = ({ children }) => {
       
       return true;
     } catch (error) {
-      console.error('❌ Token validation error:', error);
       return false;
     }
   };
@@ -399,18 +338,6 @@ export const AuthProvider = ({ children }) => {
   const getCurrentToken = () => {
     return state.token;
   };
-
-  // Debug current state
-  useEffect(() => {
-    console.log('🔍 Auth State Changed:', {
-      isAuthenticated: state.isAuthenticated,
-      loading: state.loading,
-      hasUser: !!state.user,
-      hasToken: !!state.token,
-      userName: state.user?.name || 'No name',
-      userEmail: state.user?.email || 'No email'
-    });
-  }, [state.isAuthenticated, state.loading, state.user, state.token]);
 
   const contextValue = {
     // State

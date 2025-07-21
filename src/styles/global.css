@@ -73,32 +73,11 @@ body {
   font-size: 16px;
 }
 
-/* ===== MAXIMUM SPACING BETWEEN EMAIL AND PASSWORD ===== */
+/* ✅ OPTIMIZED AUTH FORM SPACING */
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 40px; /* ✅ LARGE OVERALL GAP */
-}
-
-/* Email input specific spacing */
-.auth-form .input-group:first-child {
-  margin-bottom: 30px; /* ✅ 30px SPACE AFTER EMAIL */
-  padding-bottom: 10px; /* ✅ ADDITIONAL PADDING */
-}
-
-/* Password input positioning */
-.auth-form .input-group:nth-child(2) {
-  margin-top: 25px; /* ✅ 25px SPACE BEFORE PASSWORD */
-}
-
-/* Visual separator (optional) */
-.auth-form .input-group:first-child::after {
-  content: '';
-  display: block;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
-  margin: 20px 0;
-  opacity: 0.5;
+  gap: 20px; /* ✅ REDUCED FROM 40px TO 20px */
 }
 
 .form-group {
@@ -106,10 +85,8 @@ body {
   flex-direction: column;
 }
 
-/* ✅ ADDITIONAL SPACING FOR FORM GROUPS */
-.auth-form .form-group:not(:last-child) {
-  margin-bottom: 25px; /* ✅ EXTRA SPACE BETWEEN FORM GROUPS */
-}
+/* ✅ REMOVED EXCESSIVE SPACING RULES */
+/* Removed conflicting margin rules for input groups */
 
 .input-group {
   position: relative;
@@ -132,14 +109,14 @@ body {
   font-size: 16px;
   transition: all 0.3s ease;
   background: white;
-  color: #000000; /* ✅ BLACK TEXT */
+  color: #000000;
 }
 
 .input-group input:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-  color: #000000; /* ✅ BLACK TEXT ON FOCUS */
+  color: #000000;
 }
 
 .toggle-password {
@@ -168,7 +145,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-top: 20px; /* ✅ EXTRA SPACE ABOVE BUTTON */
+  margin-top: 15px; /* ✅ REDUCED FROM 20px TO 15px */
 }
 
 .auth-button:hover {
@@ -184,7 +161,7 @@ body {
 
 .auth-footer {
   text-align: center;
-  margin-top: 30px; /* ✅ INCREASED MARGIN */
+  margin-top: 25px; /* ✅ REDUCED FROM 30px TO 25px */
 }
 
 .auth-footer p {
@@ -245,7 +222,6 @@ body {
   gap: 12px;
 }
 
-/* Enhanced User Avatar */
 .user-avatar {
   width: 40px;
   height: 40px;
@@ -278,29 +254,27 @@ body {
   flex-direction: column;
 }
 
-/* ✅ ENHANCED USER DETAILS - BLACK TEXT */
 .user-name {
   font-weight: 600;
-  color: #000000 !important; /* ✅ FORCE BLACK TEXT */
+  color: #000000 !important;
   font-size: 16px;
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  -webkit-text-fill-color: #000000 !important; /* ✅ WEBKIT FIX */
+  -webkit-text-fill-color: #000000 !important;
 }
 
 .user-email {
   font-size: 12px;
-  color: #000000 !important; /* ✅ FORCE BLACK TEXT */
+  color: #000000 !important;
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  -webkit-text-fill-color: #000000 !important; /* ✅ WEBKIT FIX */
+  -webkit-text-fill-color: #000000 !important;
 }
 
-/* ✅ ADDITIONAL HEADER TEXT OVERRIDES */
 .header .user-name,
 .header .user-email,
 .header-content .user-name,
@@ -313,7 +287,6 @@ body {
   -webkit-text-fill-color: #000000 !important;
 }
 
-/* ✅ ENHANCED LOGOUT BUTTON WITH NEW HOVER COLOR */
 .logout-btn {
   background: #ef4444;
   color: white;
@@ -329,7 +302,7 @@ body {
 }
 
 .logout-btn:hover {
-  background: #7c3aed !important; /* ✅ PURPLE HOVER COLOR */
+  background: #7c3aed !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
 }
@@ -364,7 +337,6 @@ body {
   font-size: 16px;
 }
 
-/* Dashboard Actions */
 .dashboard-actions {
   display: flex;
   align-items: center;
@@ -561,25 +533,6 @@ body {
   color: #6b7280;
 }
 
-.task-priority {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 5px;
-}
-
-.task-due-date {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 10px;
-}
-
-.task-id-debug {
-  font-size: 12px;
-  color: #9ca3af;
-  font-style: italic;
-  margin-top: 10px;
-}
-
 .task-actions {
   display: flex;
   gap: 10px;
@@ -678,7 +631,6 @@ body {
   max-width: 600px;
 }
 
-/* Modal Header */
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -727,7 +679,6 @@ body {
   transform: none;
 }
 
-/* Task Form */
 .task-form {
   padding: 30px;
   display: flex;
@@ -735,7 +686,6 @@ body {
   gap: 25px;
 }
 
-/* Form Groups */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -750,7 +700,6 @@ body {
   display: block;
 }
 
-/* Form Textarea - BLACK TEXT FIX */
 .form-textarea {
   width: 100%;
   padding: 15px;
@@ -786,7 +735,6 @@ body {
   font-style: italic;
 }
 
-/* Form Select - BLACK TEXT FIX */
 .form-select {
   width: 100%;
   padding: 15px;
@@ -815,7 +763,6 @@ body {
   cursor: not-allowed;
 }
 
-/* Form Actions */
 .form-actions {
   display: flex;
   gap: 15px;
@@ -825,7 +772,6 @@ body {
   border-top: 1px solid #e5e7eb;
 }
 
-/* Cancel Button */
 .cancel-btn {
   background: #6b7280;
   color: white;
@@ -854,7 +800,6 @@ body {
   box-shadow: none;
 }
 
-/* Save Button */
 .save-btn {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -884,12 +829,10 @@ body {
   box-shadow: none;
 }
 
-/* Spinner Animation */
 .spin {
   animation: spin 1s linear infinite;
 }
 
-/* ADDITIONAL BLACK TEXT OVERRIDES */
 .task-form textarea,
 .task-form select,
 .modal-content textarea,
@@ -908,7 +851,7 @@ body {
   -webkit-text-fill-color: #000000 !important;
 }
 
-/* Responsive Design */
+/* ✅ OPTIMIZED RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .header-content {
     padding: 0 15px;
@@ -956,7 +899,6 @@ body {
     min-width: 40px;
   }
 
-  /* Mobile Modal Responsive */
   .modal-overlay {
     padding: 10px;
   }
@@ -991,17 +933,9 @@ body {
     padding: 15px 20px;
   }
 
-  /* ✅ MOBILE LOGIN FORM SPACING */
+  /* ✅ OPTIMIZED MOBILE AUTH SPACING */
   .auth-form {
-    gap: 30px; /* ✅ REDUCED FOR MOBILE */
-  }
-  
-  .auth-form .input-group:first-child {
-    margin-bottom: 20px; /* ✅ REDUCED MOBILE SPACING */
-  }
-  
-  .auth-form .input-group:nth-child(2) {
-    margin-top: 15px; /* ✅ REDUCED MOBILE SPACING */
+    gap: 18px; /* ✅ SLIGHTLY REDUCED FOR MOBILE */
   }
 }
 
@@ -1057,26 +991,12 @@ body {
     font-size: 12px;
   }
 
-  /* ✅ SMALL MOBILE LOGIN SPACING */
+  /* ✅ OPTIMIZED SMALL MOBILE AUTH SPACING */
   .auth-form {
-    gap: 25px; /* ✅ COMPACT FOR SMALL SCREENS */
-  }
-  
-  .auth-form .input-group:first-child {
-    margin-bottom: 15px; /* ✅ COMPACT SPACING */
-  }
-  
-  .auth-form .input-group:nth-child(2) {
-    margin-top: 10px; /* ✅ COMPACT SPACING */
-  }
-  
-  /* Hide visual separator on small screens */
-  .auth-form .input-group:first-child::after {
-    display: none;
+    gap: 16px; /* ✅ COMPACT FOR SMALL SCREENS */
   }
 }
 
-/* Dark Mode Override - FORCE WHITE BACKGROUND & BLACK TEXT */
 @media (prefers-color-scheme: dark) {
   .form-textarea,
   .form-select,
@@ -1104,7 +1024,6 @@ body {
     color: #9ca3af !important;
   }
 
-  /* ✅ FORCE BLACK TEXT IN DARK MODE FOR HEADER */
   .user-name,
   .user-email,
   .header .user-name,
@@ -1114,7 +1033,6 @@ body {
   }
 }
 
-/* Accessibility Improvements */
 .form-label:focus-within {
   color: #6366f1;
 }
@@ -1123,7 +1041,6 @@ body {
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), 0 0 0 2px #6366f1;
 }
 
-/* Animation Enhancements */
 .save-btn:active {
   transform: scale(0.98);
 }
@@ -1142,7 +1059,6 @@ body {
   100% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
 }
 
-/* Loading State Styles */
 .task-form.loading {
   pointer-events: none;
   opacity: 0.7;
@@ -1162,7 +1078,6 @@ body {
   border-radius: 20px;
 }
 
-/* Success State */
 .form-group.success .form-textarea {
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);

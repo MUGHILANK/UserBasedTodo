@@ -9,18 +9,16 @@ const TaskForm = ({ task, onClose }) => {
     taskStatus: 'pending'
   });
   const [loading, setLoading] = useState(false);
-  const { createTask, updateTask, fetchTasks } = useTask(); // ✅ Add fetchTasks
+  const { createTask, updateTask, fetchTasks } = useTask();
 
   // Populate form data when editing existing task
   useEffect(() => {
     if (task) {
-      console.log('📝 TaskForm: Editing existing task:', task);
       setFormData({
         taskDetails: task.taskDetails || '',
         taskStatus: task.taskStatus || 'pending'
       });
     } else {
-      console.log('📝 TaskForm: Creating new task');
       setFormData({
         taskDetails: '',
         taskStatus: 'pending'
@@ -30,11 +28,9 @@ const TaskForm = ({ task, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('📤 TaskForm: Form submitted with data:', formData);
     
     // Validation
     if (!formData.taskDetails.trim()) {
-      console.warn('⚠️ TaskForm: Task details is empty');
       return;
     }
 
@@ -46,39 +42,26 @@ const TaskForm = ({ task, onClose }) => {
       if (task) {
         // Update existing task
         const taskId = task.id || task.taskId || task.Id || task.TaskId;
-        console.log('🔄 TaskForm: Updating task with ID:', taskId);
         result = await updateTask(taskId, formData);
       } else {
         // Create new task
-        console.log('➕ TaskForm: Creating new task');
         result = await createTask(formData);
       }
 
-      console.log('📥 TaskForm: Operation result:', result);
-
       if (result.success) {
-        console.log('✅ TaskForm: Operation successful');
-        
-        // ✅ REFRESH TASK LIST FROM SERVER
-        console.log('🔄 TaskForm: Refreshing task list...');
+        // Refresh task list from server
         await fetchTasks();
-        console.log('✅ TaskForm: Task list refreshed, closing form');
-        
         onClose();
-      } else {
-        console.error('❌ TaskForm: Operation failed:', result.error);
       }
     } catch (error) {
-      console.error('💥 TaskForm: Unexpected error:', error);
+      // Error handling without logging
     } finally {
       setLoading(false);
     }
   };
 
-  // ... rest of your component remains the same
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`📝 TaskForm: Field changed: ${name} = "${value}"`);
     setFormData(prevState => ({
       ...prevState,
       [name]: value
@@ -87,7 +70,6 @@ const TaskForm = ({ task, onClose }) => {
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
-      console.log('🚪 TaskForm: Closing via overlay click');
       onClose();
     }
   };
