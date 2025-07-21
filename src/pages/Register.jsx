@@ -15,10 +15,10 @@ const Register = () => {
   const { register, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Updated useEffect to handle authentication properly
+  // ✅ FIXED: Only redirect if user is already authenticated (from previous login)
   useEffect(() => {
     if (isAuthenticated && !loading) {
-      console.log('User is authenticated, navigating to dashboard from Register');
+      console.log('User already authenticated, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, loading, navigate]);
@@ -37,6 +37,13 @@ const Register = () => {
       return;
     }
     
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
     if (!formData?.password?.trim()) {
       toast.error('Password is required');
       return;
@@ -47,24 +54,45 @@ const Register = () => {
       return;
     }
 
-    // ✅ FIXED: Map to exact C# RegisterRequestDto field names
+    // Register data matching backend expectations
     const registerData = {
-      name: formData.name.trim(),           // ✅ matches "Name"
-      email: formData.email.trim(),         // ✅ matches "Email" 
-      passwordHash: formData.password       // ✅ matches "PasswordHash"
+      name: formData.name.trim(),           
+      email: formData.email.trim(),         
+      passwordHash: formData.password       
     };
     
     console.log('Register data being sent:', JSON.stringify(registerData, null, 2));
     console.log('Form data:', JSON.stringify(formData, null, 2));
     
     try {
+      console.log('🚀 Starting registration process...');
       const result = await register(registerData);
+      console.log('📥 Registration result:', result);
+      
       if (result.success) {
-        // Don't navigate here - let the useEffect handle it after auth state updates
-        console.log('Registration successful, useEffect will handle navigation');
+        console.log('✅ Registration successful!');
+        
+        // ✅ AUTO-REDIRECT TO LOGIN PAGE AFTER SUCCESSFUL REGISTRATION
+        console.log('🔄 Redirecting to login page...');
+        
+        // Small delay to ensure success toast is visible
+        setTimeout(() => {
+          navigate('/login', { 
+            state: { 
+              registrationSuccess: true,
+              message: `Welcome ${result.userData?.name || formData.name}! Your account has been created successfully. Please login with your credentials.`,
+              email: formData.email.trim(), // Pre-fill email on login page
+              fromRegistration: true
+            }
+          });
+        }, 1500); // 1.5 second delay to show success toast
+        
+      } else {
+        console.error('❌ Registration failed:', result.error);
+        toast.error(result.error || 'Registration failed. Please try again.');
       }
     } catch (error) {
-      console.error('Registration submission error:', error);
+      console.error('💥 Registration submission error:', error);
       toast.error('Registration failed. Please try again.');
     }
   };
@@ -75,6 +103,10 @@ const Register = () => {
       ...prevState,
       [name]: value
     }));
+  };
+
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
   };
 
   // Show loading/redirect screen if user is already authenticated
@@ -101,6 +133,7 @@ const Register = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {/* Name Field */}
           <div className="form-group">
             <div className="input-group">
               <FaUser className="input-icon" />
@@ -117,6 +150,7 @@ const Register = () => {
             </div>
           </div>
 
+          {/* Email Field */}
           <div className="form-group">
             <div className="input-group">
               <FaEnvelope className="input-icon" />
@@ -133,6 +167,7 @@ const Register = () => {
             </div>
           </div>
 
+          {/* Password Field - No Confirm Password */}
           <div className="form-group">
             <div className="input-group">
               <FaLock className="input-icon" />
@@ -150,15 +185,17 @@ const Register = () => {
               <button
                 type="button"
                 className="toggle-password"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={togglePassword}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 disabled={loading}
+                tabIndex="-1"
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
 
+          {/* Submit Button */}
           <motion.button
             type="submit"
             className="auth-button"
@@ -171,7 +208,10 @@ const Register = () => {
         </form>
 
         <div className="auth-footer">
-          <p>Already have an account? <Link to="/login">Sign in</Link></p>
+          <p>
+            Already have an account?{' '}
+            <Link to="/login">Sign in</Link>
+          </p>
         </div>
       </motion.div>
     </div>

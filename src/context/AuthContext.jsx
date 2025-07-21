@@ -9,6 +9,7 @@ const authReducer = (state, action) => {
     case 'AUTH_INIT_START':
       console.log('🔄 Auth initialization started');
       return { ...state, loading: true };
+      
     case 'AUTH_INIT_SUCCESS':
       console.log('✅ Auth initialization success:', action.payload);
       return { 
@@ -16,11 +17,14 @@ const authReducer = (state, action) => {
         loading: false, 
         isAuthenticated: action.payload.isAuthenticated,
         user: action.payload.user,
-        token: action.payload.token
+        token: action.payload.token,
+        error: null
       };
+      
     case 'LOGIN_START':
       console.log('🔄 Login started');
       return { ...state, loading: true, error: null };
+      
     case 'LOGIN_SUCCESS':
       console.log('✅ Login success:', action.payload);
       return { 
@@ -28,11 +32,21 @@ const authReducer = (state, action) => {
         loading: false, 
         isAuthenticated: true, 
         user: action.payload.user, 
-        token: action.payload.token 
+        token: action.payload.token,
+        error: null
       };
+      
     case 'LOGIN_FAILURE':
       console.log('❌ Login failure:', action.payload);
-      return { ...state, loading: false, error: action.payload, isAuthenticated: false };
+      return { 
+        ...state, 
+        loading: false, 
+        error: action.payload, 
+        isAuthenticated: false,
+        user: null,
+        token: null
+      };
+      
     case 'LOGOUT':
       console.log('🚪 Logout');
       return { 
@@ -40,23 +54,31 @@ const authReducer = (state, action) => {
         isAuthenticated: false, 
         user: null, 
         token: null, 
-        loading: false 
+        loading: false,
+        error: null
       };
+      
     case 'REGISTER_START':
       console.log('🔄 Register started');
       return { ...state, loading: true, error: null };
+      
     case 'REGISTER_SUCCESS':
-      console.log('✅ Register success:', action.payload);
+      console.log('✅ Register success - user created, needs login');
+      return { 
+        ...state, 
+        loading: false,
+        error: null
+        // ✅ Note: No authentication state change for registration
+      };
+      
+    case 'REGISTER_FAILURE':
+      console.log('❌ Register failure:', action.payload);
       return { 
         ...state, 
         loading: false, 
-        isAuthenticated: true, 
-        user: action.payload.user, 
-        token: action.payload.token 
+        error: action.payload
       };
-    case 'REGISTER_FAILURE':
-      console.log('❌ Register failure:', action.payload);
-      return { ...state, loading: false, error: action.payload, isAuthenticated: false };
+      
     default:
       return state;
   }
@@ -146,6 +168,7 @@ export const AuthProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // ✅ LOGIN FUNCTION - Requires token authentication
   const login = async (credentials) => {
     dispatch({ type: 'LOGIN_START' });
     try {
@@ -154,34 +177,49 @@ export const AuthProvider = ({ children }) => {
       console.log('📥 Full login response:', response);
       console.log('📥 Login response data:', response.data);
       
-      // ✅ EXTRACT USER DATA PROPERLY
       let token, user;
       
       if (response.data) {
-        // Extract token
-        token = response.data.token || response.data.accessToken || response.data.authToken;
+        // ✅ Extract token - try different possible field names
+        token = response.data.token || 
+                response.data.accessToken || 
+                response.data.authToken ||
+                response.data.jwtToken ||
+                response.data.access_token;
         
-        // ✅ EXTRACT USER INFORMATION FROM RESPONSE
+        // ✅ Extract user information from login response
         user = {
-          // Try different possible field names for user data
-          id: response.data.userId || response.data.id || response.data.user?.id,
-          name: response.data.name || response.data.userName || response.data.user?.name || response.data.fullName,
-          email: response.data.email || response.data.userEmail || response.data.user?.email,
+          id: response.data.userId || 
+              response.data.id || 
+              response.data.user?.id ||
+              response.data.sub,
+          name: response.data.name || 
+                response.data.userName || 
+                response.data.user?.name || 
+                response.data.fullName ||
+                response.data.displayName,
+          email: response.data.email || 
+                 response.data.userEmail || 
+                 response.data.user?.email ||
+                 response.data.emailAddress,
           // Include any other fields from response
-          ...response.data.user, // If user data is nested
+          ...response.data.user,
           // Spread the response data in case everything is at root level
           ...(response.data.name || response.data.email ? response.data : {})
         };
         
-        // Remove token from user object if it was included
+        // Remove token fields from user object
         delete user.token;
         delete user.accessToken;
         delete user.authToken;
+        delete user.jwtToken;
+        delete user.access_token;
+        delete user.passwordHash; // Remove password hash if present
         
         console.log('👤 Extracted user data:', user);
         console.log('🔑 Extracted token preview:', token ? token.substring(0, 20) + '...' : 'null');
         
-        // ✅ VALIDATE REQUIRED FIELDS
+        // ✅ Validate required fields for login
         if (!token) {
           throw new Error('No authentication token received from server');
         }
@@ -189,9 +227,13 @@ export const AuthProvider = ({ children }) => {
         if (!user.email && !user.id) {
           console.warn('⚠️ No user identification found, using response data');
           user = { ...response.data };
+          // Clean up sensitive fields
           delete user.token;
           delete user.accessToken;
           delete user.authToken;
+          delete user.jwtToken;
+          delete user.access_token;
+          delete user.passwordHash;
         }
         
       } else {
@@ -223,31 +265,36 @@ export const AuthProvider = ({ children }) => {
       
       toast.success(`Welcome back, ${user.name || user.email || 'User'}!`);
       return { success: true };
+      
     } catch (error) {
       console.error('❌ LOGIN ERROR DETAILS ===');
       console.error('Status:', error.response?.status);
       console.error('Response Data:', error.response?.data);
       console.error('Full Error:', error);
       
+      let errorMessage = 'Login failed. Please try again.';
+      
       if (error.response?.data?.errors) {
         const validationMessages = [];
         for (const [field, messages] of Object.entries(error.response.data.errors)) {
           validationMessages.push(`${field}: ${messages.join(', ')}`);
         }
-        toast.error(`Login failed: ${validationMessages.join('; ')}`);
+        errorMessage = `Login failed: ${validationMessages.join('; ')}`;
       } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
+        errorMessage = error.response.data.message;
       } else if (error.response?.data?.title) {
-        toast.error(error.response.data.title);
-      } else {
-        toast.error(error.message || 'Login failed. Please try again.');
+        errorMessage = error.response.data.title;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
+      toast.error(errorMessage);
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message });
       return { success: false, error: error.message };
     }
   };
 
+  // ✅ REGISTER FUNCTION - No token required, just creates user
   const register = async (userData) => {
     dispatch({ type: 'REGISTER_START' });
     try {
@@ -255,71 +302,102 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register(userData);
       console.log('📥 Registration response:', response.data);
       
-      // ✅ EXTRACT USER DATA PROPERLY (same logic as login)
-      let token, user;
-      
-      if (response.data) {
-        // Extract token
-        token = response.data.token || response.data.accessToken || response.data.authToken;
+      // ✅ Registration successful - just check for success status
+      if (response.status === 200 || response.status === 201) {
+        console.log('✅ Registration successful - user created in database');
         
-        // ✅ EXTRACT USER INFORMATION FROM RESPONSE
-        user = {
-          id: response.data.userId || response.data.id || response.data.user?.id,
-          name: response.data.name || response.data.userName || response.data.user?.name || response.data.fullName,
-          email: response.data.email || response.data.userEmail || response.data.user?.email,
-          ...response.data.user,
-          ...(response.data.name || response.data.email ? response.data : {})
+        // Extract user data for success message
+        const registeredUser = response.data;
+        const userName = registeredUser.name || 
+                        registeredUser.userName || 
+                        registeredUser.email ||
+                        userData.name;
+        
+        // Show success message
+        toast.success(`Registration successful! Welcome ${userName}! Please login with your credentials.`);
+        
+        dispatch({ type: 'REGISTER_SUCCESS' });
+        
+        return { 
+          success: true, 
+          needsLogin: true,
+          userData: registeredUser
         };
-        
-        // Remove token from user object
-        delete user.token;
-        delete user.accessToken;
-        delete user.authToken;
-        
-        console.log('👤 Extracted user data:', user);
-        
-        if (!token) {
-          throw new Error('No authentication token received from server');
-        }
+      } else {
+        throw new Error(`Registration failed with status: ${response.status}`);
       }
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      dispatch({
-        type: 'REGISTER_SUCCESS',
-        payload: { token, user }
-      });
-      
-      toast.success(`Welcome, ${user.name || user.email || 'User'}!`);
-      return { success: true };
     } catch (error) {
       console.error('❌ REGISTRATION ERROR DETAILS ===');
       console.error('Status:', error.response?.status);
       console.error('Response Data:', error.response?.data);
       
+      let errorMessage = 'Registration failed';
+      
+      // Handle validation errors
       if (error.response?.data?.errors) {
         const validationMessages = [];
         for (const [field, messages] of Object.entries(error.response.data.errors)) {
           validationMessages.push(`${field}: ${messages.join(', ')}`);
         }
-        toast.error(`Registration failed: ${validationMessages.join('; ')}`);
-      } else {
-        const errorMessage = error.response?.data?.message || 'Registration failed';
-        toast.error(errorMessage);
+        errorMessage = `Registration failed: ${validationMessages.join('; ')}`;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.title) {
+        errorMessage = error.response.data.title;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
+      toast.error(errorMessage);
       dispatch({ type: 'REGISTER_FAILURE', payload: error.message });
       return { success: false, error: error.message };
     }
   };
 
+  // ✅ LOGOUT FUNCTION
   const logout = () => {
     console.log('🚪 Logging out user');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     dispatch({ type: 'LOGOUT' });
     toast.success('Logged out successfully!');
+  };
+
+  // ✅ Utility functions
+  const isTokenValid = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    try {
+      // Basic JWT validation (check if it's properly formatted)
+      const parts = token.split('.');
+      if (parts.length !== 3) return false;
+      
+      // Decode payload to check expiration
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp < currentTime) {
+        console.log('🔐 Token expired, clearing auth data');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Token validation error:', error);
+      return false;
+    }
+  };
+
+  const getCurrentUser = () => {
+    return state.user;
+  };
+
+  const getCurrentToken = () => {
+    return state.token;
   };
 
   // Debug current state
@@ -334,13 +412,27 @@ export const AuthProvider = ({ children }) => {
     });
   }, [state.isAuthenticated, state.loading, state.user, state.token]);
 
+  const contextValue = {
+    // State
+    isAuthenticated: state.isAuthenticated,
+    user: state.user,
+    token: state.token,
+    loading: state.loading,
+    error: state.error,
+    
+    // Actions
+    login,
+    register,
+    logout,
+    
+    // Utilities
+    isTokenValid,
+    getCurrentUser,
+    getCurrentToken
+  };
+
   return (
-    <AuthContext.Provider value={{
-      ...state,
-      login,
-      register,
-      logout
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -353,3 +445,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;
